@@ -75,7 +75,7 @@ class _MinusScreenState extends State<MinusScreen> {
 
   bool isRunning = false;
   bool reset = false;
-  late Timer timer;
+  late Timer? timer;
 
   void onTick(Timer timer) {
     if (totalMinusSeconds == 0) {
@@ -119,10 +119,21 @@ class _MinusScreenState extends State<MinusScreen> {
       secMinusTime = int.parse(formatSecond(totalMinusSeconds));
       reset = false;
     });
+    // 타이머가 이미 활성화되어 있는 경우를 체크하여 새로 시작하도록 처리
+    if (timer != null && timer!.isActive) {
+      timer!.cancel();
+    }
+    timer = Timer.periodic(
+      const Duration(seconds: 1),
+      onTick,
+    );
   }
 
   void onPausePreesed() {
-    timer.cancel();
+    // 타이머가 null이 아니고 실행 중일 때만 취소
+    if (timer != null && timer!.isActive) {
+      timer!.cancel();
+    }
     setState(() {
       isRunning = false;
       minMinusTime = int.parse(formatMin(totalMinusSeconds));
@@ -140,7 +151,10 @@ class _MinusScreenState extends State<MinusScreen> {
       minMinusTime = int.parse(formatMin(totalMinusSeconds));
       secMinusTime = int.parse(formatSecond(totalMinusSeconds));
     });
-    timer.cancel();
+    // 타이머가 null이 아니고 실행 중일 때만 취소
+    if (timer != null && timer!.isActive) {
+      timer!.cancel();
+    }
     reset = false;
   }
 

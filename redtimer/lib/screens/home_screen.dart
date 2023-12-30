@@ -57,8 +57,6 @@ class _HomeScreenState extends State<HomeScreen> {
         allowWifiLock: true,
       ),
     );
-
-    // noticeStart(format(totalSeconds));
   }
 
   @override
@@ -79,9 +77,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   bool isRunning = false;
   bool reset = false;
-  late Timer timer;
+  late Timer? timer;
 
   void onTick(Timer timer) {
+    print("isRunning : $isRunning");
     if (totalSeconds == limitSecond) {
       setState(() {
         isRunning = false;
@@ -93,30 +92,20 @@ class _HomeScreenState extends State<HomeScreen> {
       timer.cancel();
     } else {
       if (isRunning == true) {
-        setState(() {
-          totalSeconds = totalSeconds + 1;
-          minTime = int.parse(formatMin(totalSeconds));
-          secTime = int.parse(formatSecond(totalSeconds));
-          reset = false;
-        });
-      } else {
-        setState(() {
-          minTime = int.parse(formatMin(totalSeconds));
-          secTime = int.parse(formatSecond(totalSeconds));
-          reset = false;
-        });
+        totalSeconds = totalSeconds + 1;
       }
+      setState(() {
+        minTime = int.parse(formatMin(totalSeconds));
+        secTime = int.parse(formatSecond(totalSeconds));
+        reset = false;
+      });
       FlutterForegroundTask.updateService(
           notificationText: format(totalSeconds));
     }
   }
 
   void onStartPressed() {
-    noticeStart(format(totalSeconds));
-    timer = Timer.periodic(
-      const Duration(seconds: 1),
-      onTick,
-    );
+    // noticeStart(format(totalSeconds));
     setState(() {
       isRunning = true;
       minTime = int.parse(formatMin(totalSeconds));
@@ -125,10 +114,21 @@ class _HomeScreenState extends State<HomeScreen> {
       secLimitTime = int.parse(formatSecond(limitSecond));
       reset = false;
     });
+    // 타이머가 이미 활성화되어 있는 경우를 체크하여 새로 시작하도록 처리
+    if (timer != null && timer!.isActive) {
+      timer!.cancel();
+    }
+    timer = Timer.periodic(
+      const Duration(seconds: 1),
+      onTick,
+    );
   }
 
   void onPausePreesed() {
-    timer.cancel();
+    // 타이머가 null이 아니고 실행 중일 때만 취소
+    if (timer != null && timer!.isActive) {
+      timer!.cancel();
+    }
     setState(() {
       isRunning = false;
       minTime = int.parse(formatMin(totalSeconds));
@@ -140,7 +140,6 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void onReset() {
-    noticeStop();
     setState(() {
       isRunning = false;
       totalSeconds = 0;
@@ -149,8 +148,13 @@ class _HomeScreenState extends State<HomeScreen> {
       minTime = int.parse(formatMin(totalSeconds));
       secTime = int.parse(formatSecond(totalSeconds));
     });
-    timer.cancel();
-    reset = false;
+    // 타이머가 null이 아니고 실행 중일 때만 취소
+    if (timer != null && timer!.isActive) {
+      timer!.cancel();
+    }
+
+    // reset = false;
+    // noticeStop();
   }
 
   // 알림창 관련 함수
