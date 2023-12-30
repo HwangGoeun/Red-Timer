@@ -2,9 +2,7 @@ import 'dart:async';
 import 'dart:isolate';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
-import 'package:redtimer/screens/minus_screen.dart';
 import 'package:redtimer/widgets/plus_minus.dart';
 import 'package:redtimer/widgets/time.dart';
 import 'package:redtimer/widgets/time_input.dart';
@@ -67,6 +65,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _initForegroundTask();
+    timer = Timer.periodic(
+      const Duration(seconds: 1),
+      onTick,
+    );
   }
 
   @override

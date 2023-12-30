@@ -61,6 +61,10 @@ class _MinusScreenState extends State<MinusScreen> {
   void initState() {
     super.initState();
     _initForegroundTask();
+    timer = Timer.periodic(
+      const Duration(seconds: 1),
+      onTick,
+    );
   }
 
   @override
