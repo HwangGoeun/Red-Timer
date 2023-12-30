@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:redtimer/screens/home_screen.dart';
+import '../screens/minus_screen.dart';
 
 class TimeInput extends StatefulWidget {
   String hint, timeType;
@@ -18,13 +19,13 @@ class TimeInput extends StatefulWidget {
     required this.fontWeight,
   });
 
-  TimeInput.plusTime({
+  TimeInput.mainTime({
     super.key,
     required this.timeType,
     required this.hint,
     required this.fontColor,
   })  : boxSize = 90,
-        fontSize = 60,
+        fontSize = 68,
         fontWeight = FontWeight.w600;
 
   TimeInput.limitedTime({
@@ -87,11 +88,18 @@ class _TimeInputState extends State<TimeInput> {
         onChanged: (value) {
           if (value.isEmpty) {
             setState(() {
+              // plus screen
               widget.timeType == "minLimit"
                   ? minLimitTime = 0
                   : secLimitTime = 0;
+
+              // minus screen
+              widget.timeType == "minMain"
+                  ? minMinusTime = 0
+                  : secMinusTime = 0;
             });
           } else {
+            // plus screen
             if (widget.timeType == "minLimit") {
               minLimitTime = int.parse(value);
               setState(() {
@@ -103,6 +111,19 @@ class _TimeInputState extends State<TimeInput> {
               setState(() {
                 limitSecond = minLimitTime * 60 + secLimitTime;
                 totalSeconds = 0;
+              });
+            }
+
+            // minus screen
+            if (widget.timeType == "minMain") {
+              minMinusTime = int.parse(value);
+              setState(() {
+                totalMinusSeconds = minMinusTime * 60 + secMinusTime;
+              });
+            } else {
+              secMinusTime = int.parse(value);
+              setState(() {
+                totalMinusSeconds = minMinusTime * 60 + secMinusTime;
               });
             }
           }

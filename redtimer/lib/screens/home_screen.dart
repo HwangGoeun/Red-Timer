@@ -4,6 +4,8 @@ import 'dart:isolate';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:redtimer/screens/minus_screen.dart';
+import 'package:redtimer/widgets/plus_minus.dart';
 import 'package:redtimer/widgets/time.dart';
 import 'package:redtimer/widgets/time_input.dart';
 
@@ -14,6 +16,7 @@ int minTime = 0;
 int secTime = 0;
 int minLimitTime = 0;
 int secLimitTime = 0;
+bool homeScreen = true;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -23,8 +26,6 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  late TextEditingController _controller1;
-  late TextEditingController _controller2;
   final FocusNode _focusNode = FocusNode();
 
   void _initForegroundTask() {
@@ -66,14 +67,10 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _initForegroundTask();
-    _controller1 = TextEditingController();
-    _controller2 = TextEditingController();
   }
 
   @override
   void dispose() {
-    _controller1.dispose();
-    _controller2.dispose();
     _focusNode.dispose();
     super.dispose();
   }
@@ -83,10 +80,6 @@ class _HomeScreenState extends State<HomeScreen> {
   late Timer timer;
 
   void onTick(Timer timer) {
-    print("reset = $reset");
-    print("total = $totalSeconds");
-    print("min = $minTime");
-    print("sec = $secTime");
     if (totalSeconds == limitSecond) {
       setState(() {
         isRunning = false;
@@ -228,29 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 height: double.infinity,
                 alignment: Alignment.bottomCenter,
                 // decoration: const BoxDecoration(color: Colors.amber),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      onPressed: () {
-                        print("Add button pressed!");
-                      },
-                      icon: const Icon(Icons.add),
-                      color: Theme.of(context).textTheme.displayLarge!.color,
-                      iconSize: 30,
-                    ),
-                    IconButton(
-                      onPressed: () {},
-                      icon: const Icon(Icons.remove),
-                      color: Theme.of(context)
-                          .textTheme
-                          .displayLarge!
-                          .color!
-                          .withOpacity(0.5),
-                      iconSize: 30,
-                    )
-                  ],
-                ),
+                child: const PlusMinus(),
               ),
             ),
 
