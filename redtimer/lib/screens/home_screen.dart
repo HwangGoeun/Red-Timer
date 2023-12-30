@@ -4,6 +4,13 @@ import 'dart:isolate';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:redtimer/widgets/time.dart';
+import 'package:redtimer/widgets/time_input.dart';
+
+int tenMinutes = 600;
+int totalSeconds = tenMinutes;
+int minTime = 10;
+int secTime = 0;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -32,8 +39,8 @@ class _HomeScreenState extends State<HomeScreen> {
           name: 'launcher',
         ),
         buttons: [
-          const NotificationButton(id: 'stop', text: 'STOP'),
-          const NotificationButton(id: 'reset', text: 'RESET'),
+          // const NotificationButton(id: 'stop', text: 'STOP'),
+          // const NotificationButton(id: 'reset', text: 'RESET'),
         ],
       ),
       iosNotificationOptions: const IOSNotificationOptions(
@@ -68,10 +75,6 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  static const tenMinutes = 600;
-  int totalSeconds = tenMinutes;
-  int minTime = 10;
-  int secTime = 00;
   bool isRunning = false;
   bool reset = false;
   late Timer timer;
@@ -121,6 +124,18 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  void changeTime(String timeType, int time) {
+    // TimeInput.minTime = minTime;
+    if (timeType == "min") {
+      minTime = time * 60;
+    } else if (timeType == "sec") {
+      secTime = time;
+    }
+    setState(() {
+      totalSeconds = minTime + secTime;
+    });
+  }
+
   void noticeStart(String initialText) async {
     await FlutterForegroundTask.startService(
       notificationTitle: 'Red Timer',
@@ -165,6 +180,7 @@ class _HomeScreenState extends State<HomeScreen> {
       secTime = int.parse(formatSecond(totalSeconds));
     });
     timer.cancel();
+    reset = false;
   }
 
   void noticeStop() async {
@@ -198,13 +214,54 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Color fontColor = Theme.of(context).textTheme.displayLarge!.color!;
+
     return WithForegroundTask(
       child: Scaffold(
         backgroundColor: Theme.of(context).colorScheme.background,
         body: Column(
           children: [
             Flexible(
-              flex: 3,
+              child: Container(
+                height: double.infinity,
+              ),
+            ),
+            Flexible(
+              flex: 2,
+              child: Container(
+                width: double.infinity,
+                height: double.infinity,
+                alignment: Alignment.bottomCenter,
+                // decoration: const BoxDecoration(color: Colors.amber),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        print("Add button pressed!");
+                      },
+                      icon: const Icon(Icons.add),
+                      color: Theme.of(context).textTheme.displayLarge!.color,
+                      iconSize: 30,
+                    ),
+                    IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Icons.remove),
+                      color: Theme.of(context)
+                          .textTheme
+                          .displayLarge!
+                          .color!
+                          .withOpacity(0.5),
+                      iconSize: 30,
+                    )
+                  ],
+                ),
+              ),
+            ),
+
+            // 시간 보여지는 곳
+            Flexible(
+              flex: 1,
               child: Container(
                 width: double.infinity,
                 height: double.infinity,
@@ -217,99 +274,31 @@ class _HomeScreenState extends State<HomeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     // 분
+                    // 리셋 버튼을 클릭했을 때
                     reset == true
-                        ? Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Text(
-                              formatMin(totalSeconds),
-                              style: TextStyle(
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .displayLarge!
-                                    .color,
-                                fontSize: 68,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                        ? Time.plusTime(
+                            value: formatMin(totalSeconds),
+                            fontColor: fontColor,
                           )
+                        // 리셋 버튼을 클릭하지 않았을 때
+                        // 타이머가 작동 중이 아니라면 시간 입력 허용
                         : isRunning == false
-                            ? SizedBox(
-                                width: 100,
-                                child: TextField(
-                                  // controller: _controller1,
+                            ? TimeInput(
+                                timeType: "min",
+                                totalTime: totalSeconds,
+                                minTime: minTime,
+                                secTime: secTime,
+                                boxSize: 90,
+                                hint: minTime.toString(),
+                                fontColor: fontColor,
+                                fontSize: 68,
+                                fontWeight: FontWeight.w600)
 
-                                  // 숫자 키패드 보여주기
-                                  keyboardType: TextInputType.number,
-
-                                  // 숫자 2자리만 입력받을 수 있도록
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                    LengthLimitingTextInputFormatter(2),
-                                  ],
-
-                                  // 스타일 설정
-                                  style: TextStyle(
-                                    color: Theme.of(context)
-                                        .textTheme
-                                        .displayLarge!
-                                        .color!,
-                                    fontSize: 68,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  decoration: InputDecoration(
-                                    // default value
-                                    hintText:
-                                        minTime.toString().padLeft(2, '0'),
-                                    hintStyle: TextStyle(
-                                      color: Theme.of(context)
-                                          .textTheme
-                                          .displayLarge!
-                                          .color,
-                                      fontSize: 68,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    border: InputBorder.none,
-                                  ),
-                                  textAlign: TextAlign.center,
-
-                                  // 입력 완료되었을 때만 변수 값이 업데이트 되도록 설정
-                                  onChanged: (value) {
-                                    if (value.isEmpty) {
-                                      setState(() {
-                                        minTime = 0;
-                                      });
-                                    } else {
-                                      minTime = int.parse(value);
-                                      print("min : $minTime");
-                                      setState(() {
-                                        totalSeconds = minTime * 60 + secTime;
-                                      });
-                                    }
-                                  },
-
-                                  onTap: () {
-                                    // 포커스 잃으면 키보드 없어지게 하기
-                                    FocusScope.of(context).unfocus();
-                                    // 텍스트 필드 입력 시 기존 값 없애기
-                                    _controller1.clear();
-                                  },
-                                ),
-                              )
-                            : Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: Text(
-                                  formatMin(totalSeconds),
-                                  style: TextStyle(
-                                    color: Theme.of(context)
-                                        .textTheme
-                                        .displayLarge!
-                                        .color,
-                                    fontSize: 68,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                            // 타이머가 작동 중이라면 시간 보여주기
+                            : Time.plusTime(
+                                value: formatMin(totalSeconds),
+                                fontColor: fontColor,
                               ),
-
                     // :
                     SizedBox(
                       child: Padding(
@@ -328,101 +317,32 @@ class _HomeScreenState extends State<HomeScreen> {
 
                     // 초
                     reset == true
-                        ? Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: Text(
-                              formatSecond(totalSeconds),
-                              style: TextStyle(
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .displayLarge!
-                                    .color,
-                                fontSize: 68,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                        ? Time.plusTime(
+                            value: formatSecond(totalSeconds),
+                            fontColor: fontColor,
                           )
                         : isRunning == false
-                            ? SizedBox(
-                                width: 100,
-                                child: TextField(
-                                  // controller: _controller2,
-
-                                  // 숫자 키패드 보여주기
-                                  keyboardType: TextInputType.number,
-
-                                  // 숫자 2자리만 입력받을 수 있도록
-                                  inputFormatters: [
-                                    FilteringTextInputFormatter.digitsOnly,
-                                    LengthLimitingTextInputFormatter(2),
-                                  ],
-
-                                  // 스타일 설정
-                                  style: TextStyle(
-                                    color: Theme.of(context)
-                                        .textTheme
-                                        .displayLarge!
-                                        .color,
-                                    fontSize: 68,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                  decoration: InputDecoration(
-                                    // default value
-                                    hintText:
-                                        secTime.toString().padLeft(2, '0'),
-                                    hintStyle: TextStyle(
-                                      color: Theme.of(context)
-                                          .textTheme
-                                          .displayLarge!
-                                          .color,
-                                      fontSize: 68,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                    border: InputBorder.none,
-                                  ),
-                                  textAlign: TextAlign.center,
-
-                                  // 입력 완료되었을 때만 변수 값이 업데이트 되도록 설정
-                                  onChanged: (value) {
-                                    if (value.isEmpty) {
-                                      setState(() {
-                                        secTime = 0;
-                                      });
-                                    } else {
-                                      secTime = int.parse(value);
-                                      print("secTime : $secTime");
-                                      setState(() {
-                                        totalSeconds = minTime * 60 + secTime;
-                                      });
-                                    }
-                                  },
-
-                                  onTap: () {
-                                    // 포커스 잃으면 키보드 없어지게 하기
-                                    FocusScope.of(context).unfocus();
-                                    // 텍스트 필드 입력 시 기존 값 없애기
-                                    _controller2.clear();
-                                  },
-                                ),
+                            ? TimeInput(
+                                timeType: "sec",
+                                totalTime: totalSeconds,
+                                minTime: minTime,
+                                secTime: secTime,
+                                boxSize: 90,
+                                hint: secTime.toString(),
+                                fontColor: fontColor,
+                                fontSize: 68,
+                                fontWeight: FontWeight.w600,
                               )
-                            : Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
-                                child: Text(
-                                  formatSecond(totalSeconds),
-                                  style: TextStyle(
-                                    color: Theme.of(context)
-                                        .textTheme
-                                        .displayLarge!
-                                        .color,
-                                    fontSize: 68,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
+                            : Time.plusTime(
+                                value: secTime.toString(),
+                                fontColor: fontColor,
+                              )
                   ],
                 ),
               ),
             ),
+
+            // 시작 / 리셋 버튼 있는 곳
             const SizedBox(
               height: 15,
             ),
