@@ -4,7 +4,6 @@ import 'package:redtimer/screens/home_screen.dart';
 
 class TimeInput extends StatefulWidget {
   String hint, timeType;
-  int totalTime, minTime, secTime;
   double fontSize, boxSize;
   Color fontColor;
   FontWeight fontWeight;
@@ -12,9 +11,6 @@ class TimeInput extends StatefulWidget {
   TimeInput({
     super.key,
     required this.timeType,
-    required this.totalTime,
-    required this.minTime,
-    required this.secTime,
     required this.boxSize,
     required this.hint,
     required this.fontColor,
@@ -22,17 +18,39 @@ class TimeInput extends StatefulWidget {
     required this.fontWeight,
   });
 
+  TimeInput.plusTime({
+    super.key,
+    required this.timeType,
+    required this.hint,
+    required this.fontColor,
+  })  : boxSize = 90,
+        fontSize = 60,
+        fontWeight = FontWeight.w600;
+
+  TimeInput.limitedTime({
+    super.key,
+    required this.timeType,
+    required this.hint,
+    required this.fontColor,
+  })  : boxSize = 50,
+        fontSize = 30,
+        fontWeight = FontWeight.w500;
+
   @override
   State<TimeInput> createState() => _TimeInputState();
 }
 
 class _TimeInputState extends State<TimeInput> {
+  FocusNode textFocus = FocusNode();
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
       width: widget.boxSize,
       // decoration: const BoxDecoration(color: Colors.red),
       child: TextField(
+        focusNode: textFocus,
+
         // 숫자 키패드 보여주기
         keyboardType: TextInputType.number,
 
@@ -69,33 +87,26 @@ class _TimeInputState extends State<TimeInput> {
         onChanged: (value) {
           if (value.isEmpty) {
             setState(() {
-              widget.timeType == "min"
-                  ? widget.minTime = 0
-                  : widget.secTime = 0;
+              widget.timeType == "minLimit"
+                  ? minLimitTime = 0
+                  : secLimitTime = 0;
             });
           } else {
-            if (widget.timeType == "min") {
-              minTime = int.parse(value);
-              print("min : $widget.minTime");
+            if (widget.timeType == "minLimit") {
+              minLimitTime = int.parse(value);
               setState(() {
-                totalSeconds = minTime * 60 + secTime;
+                limitSecond = minLimitTime * 60 + secLimitTime;
+                totalSeconds = 0;
               });
             } else {
-              secTime = int.parse(value);
-              print("sec : $widget.secTime");
+              secLimitTime = int.parse(value);
               setState(() {
-                totalSeconds = minTime * 60 + secTime;
+                limitSecond = minLimitTime * 60 + secLimitTime;
+                totalSeconds = 0;
               });
             }
           }
         },
-
-        // onTap: () {
-        //   // 포커스 잃으면 키보드 없어지게 하기
-        //   FocusScope.of(context).unfocus();
-        //   // 텍스트 필드 입력 시 기존 값 없애기
-        //   _controller1.clear();
-        // },
       ),
     );
   }

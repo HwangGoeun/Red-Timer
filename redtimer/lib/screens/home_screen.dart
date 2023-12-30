@@ -8,9 +8,12 @@ import 'package:redtimer/widgets/time.dart';
 import 'package:redtimer/widgets/time_input.dart';
 
 int tenMinutes = 600;
-int totalSeconds = tenMinutes;
-int minTime = 10;
+int totalSeconds = 0;
+int limitSecond = tenMinutes;
+int minTime = 0;
 int secTime = 0;
+int minLimitTime = 0;
+int secLimitTime = 0;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -84,7 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
     print("total = $totalSeconds");
     print("min = $minTime");
     print("sec = $secTime");
-    if (totalSeconds == 0) {
+    if (totalSeconds == limitSecond) {
       setState(() {
         isRunning = false;
         totalSeconds = totalSeconds;
@@ -94,23 +97,26 @@ class _HomeScreenState extends State<HomeScreen> {
       });
       timer.cancel();
     } else {
-      setState(() {
-        totalSeconds = totalSeconds - 1;
-        minTime = int.parse(formatMin(totalSeconds));
-        secTime = int.parse(formatSecond(totalSeconds));
-        reset = false;
-      });
+      if (isRunning == true) {
+        setState(() {
+          totalSeconds = totalSeconds + 1;
+          minTime = int.parse(formatMin(totalSeconds));
+          secTime = int.parse(formatSecond(totalSeconds));
+          reset = false;
+        });
+      } else {
+        setState(() {
+          minTime = int.parse(formatMin(totalSeconds));
+          secTime = int.parse(formatSecond(totalSeconds));
+          reset = false;
+        });
+      }
       FlutterForegroundTask.updateService(
           notificationText: format(totalSeconds));
     }
   }
 
   void onStartPressed() {
-    print("start!");
-    print("reset = $reset");
-    print("total = $totalSeconds");
-    print("min = $minTime");
-    print("sec = $secTime");
     noticeStart(format(totalSeconds));
     timer = Timer.periodic(
       const Duration(seconds: 1),
@@ -120,22 +126,39 @@ class _HomeScreenState extends State<HomeScreen> {
       isRunning = true;
       minTime = int.parse(formatMin(totalSeconds));
       secTime = int.parse(formatSecond(totalSeconds));
+      minLimitTime = int.parse(formatMin(limitSecond));
+      secLimitTime = int.parse(formatSecond(limitSecond));
       reset = false;
     });
   }
 
-  void changeTime(String timeType, int time) {
-    // TimeInput.minTime = minTime;
-    if (timeType == "min") {
-      minTime = time * 60;
-    } else if (timeType == "sec") {
-      secTime = time;
-    }
+  void onPausePreesed() {
+    timer.cancel();
     setState(() {
-      totalSeconds = minTime + secTime;
+      isRunning = false;
+      minTime = int.parse(formatMin(totalSeconds));
+      secTime = int.parse(formatSecond(totalSeconds));
+      minLimitTime = int.parse(formatMin(limitSecond));
+      secLimitTime = int.parse(formatSecond(limitSecond));
+      reset = false;
     });
   }
 
+  void onReset() {
+    noticeStop();
+    setState(() {
+      isRunning = false;
+      totalSeconds = 0;
+      limitSecond = tenMinutes;
+      reset = true;
+      minTime = int.parse(formatMin(totalSeconds));
+      secTime = int.parse(formatSecond(totalSeconds));
+    });
+    timer.cancel();
+    reset = false;
+  }
+
+  // 알림창 관련 함수
   void noticeStart(String initialText) async {
     await FlutterForegroundTask.startService(
       notificationTitle: 'Red Timer',
@@ -150,39 +173,6 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  void onPausePreesed() {
-    print("Pause!");
-    print("reset = $reset");
-    print("total = $totalSeconds");
-    print("min = $minTime");
-    print("sec = $secTime");
-    timer.cancel();
-    setState(() {
-      isRunning = false;
-      minTime = int.parse(formatMin(totalSeconds));
-      secTime = int.parse(formatSecond(totalSeconds));
-      reset = false;
-    });
-  }
-
-  void onReset() {
-    print("Reset!");
-    print("reset = $reset");
-    print("total = $totalSeconds");
-    print("min = $minTime");
-    print("sec = $secTime");
-    noticeStop();
-    setState(() {
-      isRunning = false;
-      totalSeconds = tenMinutes;
-      reset = true;
-      minTime = int.parse(formatMin(totalSeconds));
-      secTime = int.parse(formatSecond(totalSeconds));
-    });
-    timer.cancel();
-    reset = false;
-  }
-
   void noticeStop() async {
     await FlutterForegroundTask.clearAllData();
     await FlutterForegroundTask.stopService();
@@ -194,6 +184,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
+  // 시간 출력 관련 함수
   String formatMin(int seconds) {
     var duration = Duration(seconds: seconds);
 
@@ -221,11 +212,15 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: Theme.of(context).colorScheme.background,
         body: Column(
           children: [
+            // 여백
             Flexible(
+              flex: 1,
               child: Container(
                 height: double.infinity,
               ),
             ),
+
+            // 플러스 / 마이너스 버튼
             Flexible(
               flex: 2,
               child: Container(
@@ -261,7 +256,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // 시간 보여지는 곳
             Flexible(
-              flex: 1,
+              flex: 2,
               child: Container(
                 width: double.infinity,
                 height: double.infinity,
@@ -280,25 +275,11 @@ class _HomeScreenState extends State<HomeScreen> {
                             value: formatMin(totalSeconds),
                             fontColor: fontColor,
                           )
-                        // 리셋 버튼을 클릭하지 않았을 때
-                        // 타이머가 작동 중이 아니라면 시간 입력 허용
-                        : isRunning == false
-                            ? TimeInput(
-                                timeType: "min",
-                                totalTime: totalSeconds,
-                                minTime: minTime,
-                                secTime: secTime,
-                                boxSize: 90,
-                                hint: minTime.toString(),
-                                fontColor: fontColor,
-                                fontSize: 68,
-                                fontWeight: FontWeight.w600)
-
-                            // 타이머가 작동 중이라면 시간 보여주기
-                            : Time.plusTime(
-                                value: formatMin(totalSeconds),
-                                fontColor: fontColor,
-                              ),
+                        // 리셋 버튼을 클릭하지 않았을 때 시간 보여주기
+                        : Time.plusTime(
+                            value: formatMin(totalSeconds),
+                            fontColor: fontColor,
+                          ),
                     // :
                     SizedBox(
                       child: Padding(
@@ -316,27 +297,77 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
 
                     // 초
+                    // 리셋 버튼을 클릭했을 때
                     reset == true
                         ? Time.plusTime(
                             value: formatSecond(totalSeconds),
                             fontColor: fontColor,
                           )
-                        : isRunning == false
-                            ? TimeInput(
-                                timeType: "sec",
-                                totalTime: totalSeconds,
-                                minTime: minTime,
-                                secTime: secTime,
-                                boxSize: 90,
-                                hint: secTime.toString(),
-                                fontColor: fontColor,
-                                fontSize: 68,
-                                fontWeight: FontWeight.w600,
-                              )
-                            : Time.plusTime(
-                                value: secTime.toString(),
-                                fontColor: fontColor,
-                              )
+                        // 리셋 버튼을 클릭하지 않았을 때 시간 보여주기
+                        : Time.plusTime(
+                            value: secTime.toString(),
+                            fontColor: fontColor,
+                          )
+                  ],
+                ),
+              ),
+            ),
+
+            // 제한 시간 부분
+            Flexible(
+              flex: 1,
+              child: Container(
+                height: double.infinity,
+                decoration: const BoxDecoration(
+                    // color: Colors.amber,
+                    ),
+                alignment: Alignment.topCenter,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // 분
+                    // 타이머가 실행중이면 제한시간 보여주기
+                    isRunning == true
+                        ? Time.limitedTime(
+                            value: formatMin(limitSecond),
+                            fontColor: fontColor,
+                          )
+                        // 실행 중이 아니라면 제한시간 입력할 수 있게 하기
+                        : TimeInput.limitedTime(
+                            timeType: "minLimit",
+                            hint: formatMin(limitSecond),
+                            fontColor: fontColor,
+                          ),
+
+                    // :
+                    SizedBox(
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 18),
+                        child: Text(
+                          ":",
+                          style: TextStyle(
+                            color:
+                                Theme.of(context).textTheme.displayLarge!.color,
+                            fontSize: 30,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // 초
+                    // 타이머가 실행중이면 제한시간 보여주기
+                    isRunning == true
+                        ? Time.limitedTime(
+                            value: formatSecond(limitSecond),
+                            fontColor: fontColor,
+                          )
+                        // 실행 중이 아니라면 제한시간 입력할 수 있게 하기
+                        : TimeInput.limitedTime(
+                            timeType: "secLimit",
+                            hint: formatSecond(limitSecond),
+                            fontColor: fontColor,
+                          ),
                   ],
                 ),
               ),
